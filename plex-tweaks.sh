@@ -74,6 +74,11 @@ function main() {
 	echo "skip-intro: $skip_intro"
 	echo "remove-delay: $remove_delay"
 
+	if [ -z "$plex_base_directory" ]; then
+		echo "Plex directory is required"
+		exit 1
+	fi
+
 	if [ ! -d "$plex_base_directory" ]; then
 		echo "\"$plex_base_directory\" does not exist"
 		exit 1
