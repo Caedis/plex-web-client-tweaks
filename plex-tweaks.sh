@@ -61,7 +61,7 @@ function get_client_file() {
 
 function skip_intro() {
 	echo "Adding Auto Skip Intro"
-	sed -i -r 's/onTouchStart:(.*)}/onTouchStart:\1,onFocus:y}/g' "$client_file"
+	perl -pi -e 's/onTouchStart:(.*?)}/onTouchStart:\1,onFocus:y}/g' "$client_file"
 }
 
 function remove_delay() {
