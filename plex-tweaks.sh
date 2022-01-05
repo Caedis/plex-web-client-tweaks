@@ -66,7 +66,7 @@ function skip_intro() {
 
 function remove_delay() {
 	echo "Removing Autoplay Delay"
-    sed -i 's/secondsLeft:10/secondsLeft:0/g' "$client_file"
+	sed -i 's/secondsLeft:10/secondsLeft:0/g' "$client_file"
 }
 
 function main() {
