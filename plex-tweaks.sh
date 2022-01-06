@@ -3,7 +3,9 @@
 # set initial values
 skip_intro=false
 remove_delay=false
-plex_dir=
+restore=false
+plex_base_directory=
+original_file=
 
 function usage() {
 	echo "Usage: $0 --plex-dir=<plex_base_directory> [--skip-intro] [--remove-delay]"
@@ -14,7 +16,7 @@ function usage() {
 function parse_args() {
 	# Option strings
 	SHORT=p:s,r
-	LONG=plex-dir:,skip-intro,remove-delay
+	LONG=plex-dir:,skip-intro,remove-delay,restore
 
 	# read the options
 	if ! OPTS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@"); then
@@ -38,6 +40,10 @@ function parse_args() {
 			remove_delay=true
 			shift
 			;;
+		--restore)
+			restore=true
+			shift
+			;;
 		--)
 			shift
 			break
@@ -55,8 +61,7 @@ client_file=
 function get_client_file() {
 	local web_client_path
 	web_client_path="$(find "$plex_base_directory" -name WebClient.bundle)/Contents/Resources/js"
-
-	client_file=$(du -a "$web_client_path" | sort -hr | sed -n '2{p;q}' | awk '{print $2}')
+	client_file=$(find "$web_client_path" -name "main*.js")
 }
 
 function skip_intro() {
@@ -69,14 +74,26 @@ function remove_delay() {
 	sed -i 's/secondsLeft:10/secondsLeft:0/g' "$client_file"
 }
 
-function main() {
-	echo "base plex directory: $plex_base_directory"
-	echo "skip-intro: $skip_intro"
-	echo "remove-delay: $remove_delay"
+function backup_original() {
+	echo "Backing up original"
+	cp "$client_file" "$client_file.bak"
+}
 
+function restore_original() {
+	if [ ! -f "$original_file" ]; then
+		echo "No original file found"
+		return
+	fi
+
+	echo "Restoring original file"
+	cp "$original_file" "$client_file"
+	rm "$original_file"
+}
+
+function main() {
 	if [ -z "$plex_base_directory" ]; then
 		echo "Plex directory is required"
-		exit 1
+		usage
 	fi
 
 	if [ ! -d "$plex_base_directory" ]; then
@@ -85,9 +102,16 @@ function main() {
 	fi
 
 	get_client_file
+	original_file="$client_file.bak"
+	if $restore; then
+		restore_original
+	else
+		# backup the original if it is not found (script has not been ran)
+		if [ ! -f "$original_file" ]; then backup_original; fi
 
-	if $skip_intro; then skip_intro; fi
-	if $remove_delay; then remove_delay; fi
+		if $skip_intro; then skip_intro; fi
+		if $remove_delay; then remove_delay; fi
+	fi
 
 	echo "Finished"
 }
